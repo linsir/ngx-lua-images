@@ -18,42 +18,42 @@ local function get_base_args()
 end
 
 local function over_range(x)
-  if not x then
-    return false
-  end
-  if (x > 3000) or (x < 0) then
-    return true
-  else
-    return false
-  end
+    if not x then
+        return false
+    end
+    if (x > 3000) or (x < 0) then
+        return true
+    else
+        return false
+    end
 end
 
 local function response_and_recache(md5, path_prefix, cut_name)
     ngx.log(ngx.INFO, "cut img exists and recache...: ",cut_name)
     local file, err = io.open(path_prefix .. cut_name, "r")
-            if not file then
-                ngx.log(ngx.ERR, "open file error:", err)
-                ngx.exit(ngx.HTTP_SERVICE_UNAVAILABLE)
-            end
+    if not file then
+        ngx.log(ngx.ERR, "open file error:", err)
+        ngx.exit(ngx.HTTP_SERVICE_UNAVAILABLE)
+    end
 
-            local data
-            while true do
-                data = file:read(1024)
-                if nil == data then
-                    break
-                end
-                ngx.req.set_header("Content-Type", "image/jpeg")
-                ngx.print(data)
-                ngx.flush(true)
-            end
-            -- 重新从文件缓存到redis
-            file:seek("set", 0)
-            data = file:read("*all")
-            -- ngx.req.set_header("Content-Type", "image/jpeg")
-            -- ngx.print(data)
-            cache.save_img(md5, data)
+    local data
+    while true do
+        data = file:read(1024)
+        if nil == data then
+            break
+        end
+        ngx.req.set_header("Content-Type", "image/jpeg")
+        ngx.print(data)
+        ngx.flush(true)
+    end
+    -- 重新从文件缓存到redis
+    file:seek("set", 0)
+    data = file:read("*all")
+    -- ngx.req.set_header("Content-Type", "image/jpeg")
+    -- ngx.print(data)
+    cache.save_img(md5, data)
 
-            file:close()
+    file:close()
 end
 
 local function response_from_file(md5, path_prefix, file_path, cut_name, w, h, g, x, y, r, p, q, f)
