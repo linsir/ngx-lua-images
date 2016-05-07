@@ -10,7 +10,7 @@ local function get_info(file)
 
     info = gm.info(file)
     local x = cjson.encode(info)
-    -- ngx.log(ngx.INFO, "info: ", x)
+    -- ngx.log(ngx.INFO, "info: ", info)
     return x
 end
 
@@ -23,7 +23,7 @@ function _M.run()
     ngx.log(ngx.INFO, "md5: ", md5)
     if common.file_exists(default_file) then
         local data = get_info(default_file)
-        ngx.req.set_header("Content-Type", "application/json")
+        ngx.header["Content-Type"] = "application/json"
         ngx.print(data)
 
     else

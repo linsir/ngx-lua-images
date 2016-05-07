@@ -39,13 +39,18 @@ function _M.create_cut_image(md5, path_prefix, cut_name, w, h, g, x, y, r, p, q,
             img:size(w, h)
         end
     else
+        -- x or y not nil ,crop image, and must be given both width and height.
+
+        if not (w and h) then
+            common.forbidden("you must be give both width and height.")
+        end
         local x = x or 0
         local y = y or 0
         if over_range(w) or over_range(h) or over_range(x) or over_range(y) then
             common.forbidden("over range.")
         else
+            ngx.log(ngx.INFO, "img change: crop (", x, ", ", y, ") ", w, "x", h)
             img:crop(w, h, x, y)
-            ngx.log(ngx.INFO, "img change: crop ", x, y, w, h)
         end
     end
 
@@ -64,19 +69,21 @@ function _M.create_cut_image(md5, path_prefix, cut_name, w, h, g, x, y, r, p, q,
     end
 
     -- format
-    if not f then
-        f = 'jpg'
-    end
+    -- if not f then
+    --     f = 'jpg'
+    -- end
 
     if f then
-        local format = f:upper()
+        local format = f
         if format == 'JPG' then
             format = 'JPEG'
         end
         ngx.log(ngx.INFO, "img change: format ", format)
-        if not pcall(img:format(), format) then
-            common.forbidden("image format error.")
-        end
+        img:format(format)
+        -- if  not pcall(format_image, img, format) then
+        --     common.forbidden("image format error.")
+        -- end
+        
     end
 
     -- quality

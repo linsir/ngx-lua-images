@@ -63,14 +63,30 @@ function _M.get_full_dir(md5)
 
 end
 
+-- 检测数组中是否包含某个值
+function _M.in_array(value,list)
+    if not list then
+        return false
+    else
+        for k, v in ipairs(list) do
+            if v == value then
+                return true
+            end
+        end
+        return false
+    end
+end
+
 function _M.not_found(file)
     ngx.status = 404
+    ngx.header["Content-Type"] = "text/plain"
     ngx.say("Opps, file not found.: ", file)
     ngx.exit(404)
 end
 
 function _M.forbidden(info)
     ngx.status = 403
+    ngx.header["Content-Type"] = "text/plain"
     ngx.say("Opps, ", info)
     ngx.exit(403)
 end

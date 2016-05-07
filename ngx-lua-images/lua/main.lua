@@ -13,9 +13,13 @@ local common = require "common"
 local cache = require "cache"
 local createimg = require "createimg"
 
-local function get_base_args()
-
-end
+local allowed_type = {
+    "JPG",
+    "JPEG",
+    "PNG",
+    "GIF",
+    "BMP"
+}
 
 local function over_range(x)
     if not x then
@@ -42,15 +46,13 @@ local function response_and_recache(md5, path_prefix, cut_name)
         if nil == data then
             break
         end
-        ngx.req.set_header("Content-Type", "image/jpeg")
+        ngx.header["Content-Type"] = "image/jpeg"
         ngx.print(data)
         ngx.flush(true)
     end
     -- 重新从文件缓存到redis
     file:seek("set", 0)
     data = file:read("*all")
-    -- ngx.req.set_header("Content-Type", "image/jpeg")
-    -- ngx.print(data)
     cache.save_img(md5, data)
 
     file:close()
@@ -92,7 +94,7 @@ function _M.run()
     local r = tonumber(ngx.var.arg_r)
     local p = tonumber(ngx.var.arg_p)
     local q = tonumber(ngx.var.arg_q)
-    local f = ngx.var.arg_f
+    local f = ngx.var.arg_f:upper()
 
     local cut_name = string.format("w%s_h%s_g%s_x%s_y%s_r%s_p%s_q%s_f%s", w, h, g, x, y, r, p, q, f)
 
@@ -117,6 +119,13 @@ function _M.run()
     else
         key = md5 .. '_' .. cut_name
     end
+    
+    -- 判断f是否非法
+    if f then
+        if not common.in_array(f, allowed_type) then
+            common.forbidden("format is incorrect. ")
+        end
+    end
 
     -- 判断参数是否超范围
     if over_range(w) or over_range(h) or over_range(x) or over_range(y) then
@@ -125,7 +134,7 @@ function _M.run()
 
     local data = cache.get_img(key)
     if data then
-        ngx.req.set_header("Content-Type", "image/jpeg")
+        ngx.header["Content-Type"] = "image/jpeg"
         ngx.print(data)
     else
         response_from_file(md5, path_prefix, file_path, cut_name, w, h, g, x, y, r, p, q, f)
