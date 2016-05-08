@@ -8,8 +8,11 @@ OpenResty (nginx+lua)+tfs+GraphicsMagick 类似于 zimg, 动态生成处理图�
 后面会支持分布式储存tfs。
 
 图片存储路径的规划方案。
-借鉴zimg的方案，存储路径采用2级子目录的方案。由于Linux同目录下的子目录数最好不要超过2000个，再加上MD5的值本身就是32位十六进制数，zimg就采取了一种非常取巧的方式：根据MD5的前六位进行哈希，1-3位转换为十六进制数后除以4，范围正好落在1024以内，以这个数作为第一级子目录；4-6位同样处理，作为第二级子目录；二级子目录下是以MD5命名的文件夹，每个MD5文件夹内存储图片的原图和其他根据需要存储的版本，假设一个图片平均占用空间200KB，一台zimg服务器支持的总容量就可以计算出来了：
-1024 * 1024 * 1024 * 200KB = 200TB
+
+
+借鉴zimg的方案，存储路径采用2级子目录的方案。由于Linux同目录下的子目录数最好不要超过2000个，再加上MD5的值本身就是32位十六进制数，zimg就采取了一种非常取巧的方式：根据MD5的前六位进行哈希，1-3位转换为十六进制数后除以4，范围正好落在1024以内，以这个数作为第一级子目录；4-6位同样处理，作为第二级子目录；二级子目录下是以MD5命名的文件夹，每个MD5文件夹内存储图片的原图和其他根据需要存储的版本，假设一个图片平均占用空间200KB，一台服务器支持的总容量就可以计算出来了：
+
+    1024 * 1024 * 1024 * 200KB = 200TB
 
 ### Installing
 
@@ -69,6 +72,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * <http://openresty.org>
 * <https://github.com/buaazp/zimg>
-* <>https://github.com/clementfarabet/graphicsmagick
+* <https://github.com/clementfarabet/graphicsmagick>
 * <https://www.gitbook.com/book/moonbingbing/openresty-best-practices>
 
