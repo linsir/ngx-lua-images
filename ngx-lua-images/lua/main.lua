@@ -49,6 +49,7 @@ local function response_and_recache(md5, path_prefix, cut_name)
         end
         ngx.print(data)
         ngx.flush(true)
+        ngx.eof() -- 即时关闭连接，把数据返回给终端，后面的操作还会运行
     end
     -- 重新从文件缓存到redis
     file:seek("set", 0)
