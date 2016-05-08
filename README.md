@@ -1,78 +1,63 @@
-# Project Title
+# ngx-lua-images
 
-One Paragraph of project description goes here
+OpenResty (nginx+lua)+tfs+GraphicsMagick 类似于 zimg, 动态生成处理图片的图片服务器。
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+架构类似于zimg,http层加了redis缓存，处理后的保存为文件也算是个缓存，可以写个crontab脚本定期清理不常访问的缓存图片。
+后面会支持分布式储存tfs。
 
-### Prerequisities
-
-What things you need to install the software and how to install them
-
-```
-Give examples
-```
+图片存储路径的规划方案。
+借鉴zimg的方案，存储路径采用2级子目录的方案。由于Linux同目录下的子目录数最好不要超过2000个，再加上MD5的值本身就是32位十六进制数，zimg就采取了一种非常取巧的方式：根据MD5的前六位进行哈希，1-3位转换为十六进制数后除以4，范围正好落在1024以内，以这个数作为第一级子目录；4-6位同样处理，作为第二级子目录；二级子目录下是以MD5命名的文件夹，每个MD5文件夹内存储图片的原图和其他根据需要存储的版本，假设一个图片平均占用空间200KB，一台zimg服务器支持的总容量就可以计算出来了：
+1024 * 1024 * 1024 * 200KB = 200TB
 
 ### Installing
 
-A step by step series of examples that tell you have to get a development env running
+GraphicsMagick OpenResty
 
-Stay what the step will be
 
-```
-Give the example
-```
+```bash
+sudo apt-get install GraphicsMagick libgraphicsmagick1-dev
 
-And repeat
+or 
 
-```
-until finished
-```
+yum install GraphicsMagick GraphicsMagick-devel -y
 
-End with an example of getting some data out of the system or using it for a little demo
+## openresty
+tar xvf ngx_openresty-VERSION.tar.gz
+cd ngx_openresty-VERSION/
+./configure
+make
+make install
 
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
 
 ```
-Give an example
-```
 
-### And coding style tests
-
-Explain what these tests test and why
+And 
 
 ```
-Give an example
+cd /usr/local/openresty/nginx/conf
+mkdir conf.d
+
+add "include conf.d/*.conf;" into nginx.conf
+
+# last, in ngx-lua_images folder.
+
+bash deploy.sh
+
 ```
 
-## Deployment
+如果没有错误，就可以访问了。
 
-Add additional notes about how to deploy this on a live system
+```
+http://localhost:8000/fffc929444a9fb7eb754217cfd7b0d58?w=500&h=500&g=1&x=0&y=0&r=45&q=75&f=jpeg
+http://localhost:8000/get_info?md5=fffc929444a9fb7eb754217cfd7b0d58
+```
 
-## Built With
-
-* Dropwizard - Bla bla bla
-* Maven - Maybe
-* Atom - ergaerga
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Linsir** - *Initial work* - [Linsir](https://github.com/vi5i0n)
 
 See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
@@ -82,7 +67,8 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+* <http://openresty.org>
+* <https://github.com/buaazp/zimg>
+* <>https://github.com/clementfarabet/graphicsmagick
+* <https://www.gitbook.com/book/moonbingbing/openresty-best-practices>
 

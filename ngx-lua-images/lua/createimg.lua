@@ -63,7 +63,7 @@ function _M.create_cut_image(md5, path_prefix, cut_name, w, h, g, x, y, r, p, q,
     -- rotate
     if r then
         if (-360 < r) and (r < 360) then
-            img:rotate(r)
+            img:rotate(r,255,255,255)
             ngx.log(ngx.INFO, "img change: rotate ", r)
         end
     end

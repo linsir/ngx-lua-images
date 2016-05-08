@@ -41,12 +41,12 @@ local function response_and_recache(md5, path_prefix, cut_name)
     end
 
     local data
+    ngx.header["Content-Type"] = "image/jpeg"
     while true do
         data = file:read(1024)
         if nil == data then
             break
         end
-        ngx.header["Content-Type"] = "image/jpeg"
         ngx.print(data)
         ngx.flush(true)
     end
@@ -94,7 +94,7 @@ function _M.run()
     local r = tonumber(ngx.var.arg_r)
     local p = tonumber(ngx.var.arg_p)
     local q = tonumber(ngx.var.arg_q)
-    local f = ngx.var.arg_f:upper()
+    local f = ngx.var.arg_f
 
     local cut_name = string.format("w%s_h%s_g%s_x%s_y%s_r%s_p%s_q%s_f%s", w, h, g, x, y, r, p, q, f)
 
@@ -119,10 +119,10 @@ function _M.run()
     else
         key = md5 .. '_' .. cut_name
     end
-    
+
     -- 判断f是否非法
     if f then
-        if not common.in_array(f, allowed_type) then
+        if not common.in_array(f:upper(), allowed_type) then
             common.forbidden("format is incorrect. ")
         end
     end
