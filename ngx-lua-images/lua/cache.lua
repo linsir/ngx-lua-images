@@ -26,7 +26,7 @@ function _M.get_img(key)
     local red = redis:new()
     local ok, err = red:get(key)
     if not ok then
-        ngx.log(ngx.ERR, "failed to get key: ", key, " ", err)
+        ngx.log(ngx.INFO, "failed to get key: ", key, " ", err)
         return false
     end
     ngx.log(ngx.INFO, "get image ", key, " from redis..")
