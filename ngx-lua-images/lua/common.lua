@@ -77,10 +77,10 @@ function _M.in_array(value,list)
     end
 end
 
-function _M.not_found(file)
+function _M.not_found()
     ngx.status = 404
     ngx.header["Content-Type"] = "text/plain"
-    ngx.say("Opps, file not found.: ", file)
+    ngx.say("Opps, file not found.")
     ngx.exit(404)
 end
 

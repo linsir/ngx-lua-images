@@ -27,7 +27,7 @@ function _M.run()
         ngx.print(data)
 
     else
-        common.not_found(default_file)
+        common.not_found()
     end
 
 end

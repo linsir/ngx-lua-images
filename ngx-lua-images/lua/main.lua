@@ -80,7 +80,7 @@ local function response_from_file(md5, path_prefix, file_path, cut_name, w, h, g
         end
     else
         -- 原始文件不存在
-        common.not_found(file_path)
+        common.not_found()
     end
     -- body
 end
@@ -110,7 +110,7 @@ function _M.run()
 
     -- 简单判断md5是否合法
     if type(md5) ~= "string" or #md5 ~= 32 then
-        common.not_found(md5)
+        common.not_found()
     end
 
     -- 判断是否请求要原图
