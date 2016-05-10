@@ -39,19 +39,28 @@ def put_conf_file():
         local("sudo rm -rf %snginx/conf/conf.d/ngx-lua-images.conf" %prefix)
     local("sudo ln -s  %sngx-lua-images/ngx-lua-images.conf %snginx/conf/conf.d/ngx-lua-images.conf" %(prefix, prefix))
 
-    # with cd('/usr/local/openresty/nginx/conf/conf.d/'):
-    #     run('sudo ln -s  /usr/local/openresty/ngx-lua-images/ngx-lua-images.conf ngx-lua-images.conf')
 
+def remote_update():
+    print(yellow("copy ngx-lua-images and configure..."))
+    run('sudo rm -rf /usr/local/openresty/ngx-lua-images/')
+    put('ngx-lua-images', '/usr/local/openresty/')
+    with cd('/usr/local/openresty/nginx/conf/conf.d/'):
+        if not os.path.exists("%snginx/conf/conf.d/ngx-lua-images.conf" %prefix):
+            run('sudo ln -s  /usr/local/openresty/ngx-lua-images/ngx-lua-images.conf ngx-lua-images.conf')
+    print(green("nginx restarting..."))
+    run('/etc/init.d/nginx restart')
 
 def restart():
     print(green("nginx restarting..."))
-    # run('/etc/init.d/nginx restart')
     local('sudo systemctl restart nginx')
 
 def update():
-    put_conf_file()
+    # local update
+    # put_conf_file()
+    # restart()
 
-    restart()
+    # remote update
+    remote_update()
 
     pass
 if __name__ == '__main__':
