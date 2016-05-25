@@ -26,7 +26,7 @@ env.use_ssh_config = True
 
 prefix = '/usr/local/openresty/'
 
-def put_conf_file():
+def local_update():
     print(yellow("copy ngx-lua-images and configure..."))
     # run('sudo rm -rf /usr/local/openresty/ngx-lua-images/')
     # put('ngx-lua-images', '/usr/local/openresty/')
@@ -38,6 +38,8 @@ def put_conf_file():
     if os.path.exists("%snginx/conf/conf.d/ngx-lua-images.conf" %prefix):
         local("sudo rm -rf %snginx/conf/conf.d/ngx-lua-images.conf" %prefix)
     local("sudo ln -s  %sngx-lua-images/ngx-lua-images.conf %snginx/conf/conf.d/ngx-lua-images.conf" %(prefix, prefix))
+
+    restart()
 
 
 def remote_update():
@@ -56,11 +58,10 @@ def restart():
 
 def update():
     # local update
-    # put_conf_file()
-    # restart()
+    local_update()
 
     # remote update
-    remote_update()
+    # remote_update()
 
     pass
 if __name__ == '__main__':

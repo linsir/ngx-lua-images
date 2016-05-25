@@ -61,3 +61,7 @@ Regards,
 
 Regards, 
 -agentzh 
+
+
+sudo luarocks install xxhash --server=http://luarocks.org
+lua-resty-hmac
