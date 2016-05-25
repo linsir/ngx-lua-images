@@ -83,7 +83,7 @@ function _M.create_cut_image(md5, path_prefix, cut_name, w, h, g, x, y, r, p, q,
         -- if  not pcall(format_image, img, format) then
         --     common.forbidden("image format error.")
         -- end
-        
+
     end
 
     -- quality
@@ -108,6 +108,92 @@ function _M.create_cut_image(md5, path_prefix, cut_name, w, h, g, x, y, r, p, q,
     end
 end
 
--- _M['create_cut_image'] = create_cut_image
+function _M.create_cut_image_ceph(data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
+    ngx.log(ngx.INFO, "creating img ",file)
+    img = gm.Image()
+    img:fromString(data)
+    -- if pcall(function () img:fromString(data) end) then
+    --     common.forbidden("over range2.")
+    -- else
+    --     common.forbidden("over range1.")
+    -- end
+
+    -- size
+    if not (x or y) then
+        if over_range(w) or over_range(h) then
+            common.forbidden("over range.")
+        else
+            ngx.log(ngx.INFO, "img change: size ", w, 'x', h)
+            img:size(w, h)
+        end
+    else
+        -- x or y not nil ,crop image, and must be given both width and height.
+
+        if not (w and h) then
+            common.forbidden("you must be give both width and height.")
+        end
+        local x = x or 0
+        local y = y or 0
+        if over_range(w) or over_range(h) or over_range(x) or over_range(y) then
+            common.forbidden("over range.")
+        else
+            ngx.log(ngx.INFO, "img change: crop (", x, ", ", y, ") ", w, "x", h)
+            img:crop(w, h, x, y)
+        end
+    end
+
+    -- gray
+    if g == 1 then
+        img:colorspace('GRAY')
+            ngx.log(ngx.INFO, "img change: GRAY ")
+    end
+
+    -- rotate
+    if r then
+        if (-360 < r) and (r < 360) then
+            img:rotate(r,255,255,255)
+            ngx.log(ngx.INFO, "img change: rotate ", r)
+        end
+    end
+
+    -- format
+    -- if not f then
+    --     f = 'jpg'
+    -- end
+
+    if f then
+        local format = f
+        if format == 'JPG' then
+            format = 'JPEG'
+        end
+        ngx.log(ngx.INFO, "img change: format ", format)
+        img:format(format)
+        -- if  not pcall(format_image, img, format) then
+        --     common.forbidden("image format error.")
+        -- end
+
+    end
+
+    -- quality
+    local key = bucket .. '_' .. file .. '_' .. cut_name
+    if q then
+        if (0 < q) and (q < 100) then
+          local data = img:toString(q)
+          ngx.log(ngx.INFO, "create and save new img: ",key)
+          cache.save_img(key, data)
+          return data
+        else
+          local data = img:toString(95)
+          ngx.log(ngx.INFO, "create and save new img: ",key)
+          cache.save_img(key, data)
+          return data
+        end
+    else
+        local data = img:toString(95)
+        ngx.log(ngx.INFO, "create and save new img: ",key)
+        cache.save_img(key, data)
+        return data
+    end
+end
 
 return _M

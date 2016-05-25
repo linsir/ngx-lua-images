@@ -60,6 +60,19 @@ local function response_and_recache(md5, path_prefix, cut_name)
     file:close()
 end
 
+local function response_and_recache_ceph(bucket, file)
+    local cephs3 = require("cephs3")
+    local app = cephs3:new(config.access_key, config.secret_key)
+    local data = app:get_obj(bucket, file)
+    ngx.header["Content-Type"] = "image/jpeg"
+    ngx.print(data)
+    ngx.flush(true)
+    ngx.eof() -- 即时关闭连接，把数据返回给终端，后面的操作还会运行
+    key = bucket .. file
+    cache.save_img(key, data)
+
+end
+
 local function response_from_file(md5, path_prefix, file_path, cut_name, w, h, g, x, y, r, p, q, f)
     -- 原始文件存在
     if common.file_exists(file_path) then
@@ -83,7 +96,42 @@ local function response_from_file(md5, path_prefix, file_path, cut_name, w, h, g
         -- 原始文件不存在
         common.not_found()
     end
-    -- body
+
+end
+
+local function response_from_ceph(bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
+    local cephs3 = require("cephs3")
+    local app = cephs3:new(config.access_key, config.secret_key)
+    if app:check_for_existance(bucket, file) then
+        local data = app:get_obj(bucket, file)
+        -- ngx.print(data)
+        if not data then
+            common.forbidden("orgin image is not found...")
+        end
+
+        if is_orgin then
+            response_and_recache_ceph(bucket, file)
+        else
+            -- 生成切图文件
+            -- local data = createimg.create_cut_image_ceph(data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
+            if pcall(createimg.create_cut_image_ceph,data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f) then
+                -- ngx.print("error")
+                ngx.exec(ngx.var.request_uri)
+            else
+                common.forbidden("maybe is not a image file..")
+            end
+            -- if data then
+            --     ngx.print(data)
+            -- else
+            --     common.forbidden("maybe is not a image file..")
+            -- end
+            -- 重写请求参数，再次访问
+            -- ngx.exec(ngx.var.request_uri)
+        end
+    else
+        -- 原始文件不存在
+        common.not_found()
+    end
 end
 
 function _M.run()
@@ -100,27 +148,10 @@ function _M.run()
 
     local cut_name = string.format("w%s_h%s_g%s_x%s_y%s_r%s_p%s_q%s_f%s", w, h, g, x, y, r, p, q, f)
 
-    -- ngx.log(ngx.INFO, "cut_name: ", cut_name)
 
     local is_orgin = not common.is_null_table(ngx.req.get_uri_args())
 
     local requesturi = string.gsub(ngx.var.request_uri,"?.*","")
-    local md5 =  string.gsub(requesturi,"/","")
-    local path_prefix = common.get_full_dir(md5)
-    local file_path =  string.format("%sdefault", path_prefix)
-
-    -- 简单判断md5是否合法
-    if type(md5) ~= "string" or #md5 ~= 32 then
-        common.not_found()
-    end
-
-    -- 判断是否请求要原图
-    local key  =  ''
-    if is_orgin then
-        key = md5
-    else
-        key = md5 .. '_' .. cut_name
-    end
 
     -- 判断f是否非法
     if f then
@@ -134,13 +165,45 @@ function _M.run()
         common.forbidden("args over range.")
     end
 
-    local data = cache.get_img(key)
-    if data then
-        ngx.header["Content-Type"] = "image/jpeg"
-        ngx.print(data)
+    if config.ceph_mode then
+        local start = string.find(requesturi, "/",2)
+        local bucket = string.sub(requesturi, 2, start - 1)
+        local file = string.sub(requesturi, start + 1)
+        local key = bucket .. '_' .. file .. '_' .. cut_name
+        ngx.log(ngx.INFO, "cut_name: ", key)
+        local data = cache.get_img(key)
+        if data then
+            ngx.header["Content-Type"] = "image/jpeg"
+            ngx.print(data)
+        else
+            response_from_ceph(bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
+        end
     else
-        response_from_file(md5, path_prefix, file_path, cut_name, w, h, g, x, y, r, p, q, f)
+        local md5 =  string.gsub(requesturi,"/","")
+        local path_prefix = common.get_full_dir(md5)
+        local file_path =  string.format("%sdefault", path_prefix)
+        -- 简单判断md5是否合法
+        if type(md5) ~= "string" or #md5 ~= 32 then
+            common.not_found()
+        end
+        -- 判断是否请求要原图
+        local key  =  ''
+        if is_orgin then
+            key = md5
+        else
+            key = md5 .. '_' .. cut_name
+        end
+
+        local data = cache.get_img(key)
+        if data then
+            ngx.header["Content-Type"] = "image/jpeg"
+            ngx.print(data)
+        else
+            response_from_file(md5, path_prefix, file_path, cut_name, w, h, g, x, y, r, p, q, f)
+        end
     end
+
+
 
 end
 
