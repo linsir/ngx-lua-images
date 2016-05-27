@@ -91,12 +91,11 @@ function _M.forbidden(info)
     ngx.exit(403)
 end
 
--- _M['is_null_table'] = is_null_table
--- _M['get_tag_value'] = get_tag_value
--- _M['file_exists'] = file_exists
--- _M['dir_exists'] = dir_exists
--- _M['mk_dirs'] = mk_dirs
--- _M['get_full_dir'] = get_full_dir
--- _M['prefix_addr'] = prefix_addr
+function _M.error(info)
+    ngx.status = 500
+    ngx.header["Content-Type"] = "text/plain"
+    ngx.say("Opps, ", info)
+    ngx.exit(500)
+end
 
 return _M
