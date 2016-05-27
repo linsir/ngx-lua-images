@@ -8,7 +8,6 @@ local os = require "os"
 
 config = {
     host = 'http://192.168.2.99',
-    user = 'demo',
     access_key = 'HXKJ2FLL7BAWENBMP0HF',
     secret_key = 'DEeFyCPlBKK2vS7DPJDeeozNiF5WAjL7pVMNpDlO',
 
@@ -35,7 +34,18 @@ function _M.new(self, id, key)
     if not key then
         return nil, "must provide key"
     end
-    return setmetatable({ id = id, key = key, base_url = "/proxy" }, mt)
+    local url = "/proxy"
+    local res = ngx.location.capture("/proxy/",
+            { method = ngx.HTTP_GET,
+            })
+    -- ngx.log(ngx.ERR, "connect to ceph gateway： ", res.status)
+    if res.status == 504 then
+        ngx.status = 504
+        ngx.header["Content-Type"] = "text/plain"
+        ngx.say("Opps, can not connect to ceph gateway.")
+        ngx.exit(504)
+    end
+    return setmetatable({ id = id, key = key, base_url = url }, mt)
 end
 
 function _M.generate_auth_headers(self, method, destination, content_type)
@@ -81,7 +91,7 @@ function _M.get_all_buckets(self)
         retry = retry + 1
     end
     if not res then
-      ngx.say("failed to get_all_objs: ", err)
+      ngx.log(ngx.ERR, "failed to get_all_objs: ", destination, ": ", err)
       return
     end
 
@@ -101,7 +111,7 @@ function _M.get_all_objs(self, bucket)
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to get_all_objs: ", err)
+      ngx.log(ngx.ERR, "failed to get_all_objs: ", destination, ": ", err)
       return
     end
 
@@ -122,7 +132,7 @@ function _M.create_obj(self, bucket, file, content)
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to create_obj: ", err)
+      ngx.log(ngx.ERR, "failed to create_obj: ", destination, ": ", err)
       return
     end
     -- ngx.say(res.body)
@@ -140,7 +150,7 @@ function _M.get_obj(self, bucket, file)
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to get_obj: ", err)
+      ngx.log(ngx.ERR, "failed to get_obj: ", destination, ": ", err)
       return
     end
     if res.status == 404 then
@@ -155,21 +165,22 @@ end
 function _M.check_for_existance(self, bucket, file)
     local destination = "/" .. bucket .. "/" .. file
     local url = self.base_url .. destination
-    headers = self:generate_auth_headers("GET", destination)
+    headers = self:generate_auth_headers("HEAD", destination)
 
     local res = ngx.location.capture(url,
-            { method = ngx.HTTP_GET,
+            { method = ngx.HTTP_HEAD,
               body = content,
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to get_obj: ", err)
-      return
+      ngx.log(ngx.ERR, "failed to check_for_existance: ", destination, ": ", err)
+      return false
     end
-    if res.status == 404 then
-        return false
-    else
+    if res.status == 200 then
         return true
+    else
+        ngx.log(ngx.ERR, "failed to connet to ceph gateway : ", res.body)
+        return false
     end
 end
 
@@ -183,7 +194,7 @@ function _M.del_obj(self, bucket, file)
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to del_obj: ", err)
+      ngx.log(ngx.ERR, "failed to del_obj: ", destination, ": ", err)
       return
     end
 
@@ -202,7 +213,7 @@ function _M.create_bucket(self, bucket)
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to create_bucket: ", err)
+      ngx.log(ngx.ERR, "failed to create_bucket: ", destination, ": ", err)
       return
     end
     return "Create bucket Sucess."
@@ -220,7 +231,7 @@ function _M.del_bucket(self, bucket)
               args = {date=headers.date, auth=headers.auth, file=destination}}
         )
     if not res then
-      ngx.say("failed to del_bucket: ", err)
+      ngx.log(ngx.ERR, "failed to del_bucket: ", destination, ": ", err)
       return
     end
     if res.status == 404 then
