@@ -104,7 +104,6 @@ local function response_from_ceph(bucket, file, cut_name, w, h, g, x, y, r, p, q
     local app = cephs3:new(config.access_key, config.secret_key)
     if app:check_for_existance(bucket, file) then
         local data = app:get_obj(bucket, file)
-        -- ngx.print(data)
         if not data then
             common.forbidden("orgin image is not found...")
         end
@@ -113,20 +112,18 @@ local function response_from_ceph(bucket, file, cut_name, w, h, g, x, y, r, p, q
             response_and_recache_ceph(bucket, file)
         else
             -- 生成切图文件
-            -- local data = createimg.create_cut_image_ceph(data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
-            if pcall(createimg.create_cut_image_ceph,data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f) then
-                -- ngx.print("error")
-                ngx.exec(ngx.var.request_uri)
+            local data = createimg.create_cut_image_ceph(data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
+            -- if pcall(createimg.create_cut_image_ceph,data, bucket, file, cut_name, w, h, g, x, y, r, p, q, f) then
+            --     -- ngx.print("error")
+            --     ngx.exec(ngx.var.request_uri)
+            -- else
+            --     common.error("maybe is not a image file..")
+            -- end
+            if data then
+                ngx.print(data)
             else
                 common.forbidden("maybe is not a image file..")
             end
-            -- if data then
-            --     ngx.print(data)
-            -- else
-            --     common.forbidden("maybe is not a image file..")
-            -- end
-            -- 重写请求参数，再次访问
-            -- ngx.exec(ngx.var.request_uri)
         end
     else
         -- 原始文件不存在
@@ -166,15 +163,22 @@ function _M.run()
     end
 
     if config.ceph_mode then
+
         local start = string.find(requesturi, "/",2)
+        if not start then
+            common.not_found()
+        end
+
         local bucket = string.sub(requesturi, 2, start - 1)
         local file = string.sub(requesturi, start + 1)
         local key = bucket .. '_' .. file .. '_' .. cut_name
         ngx.log(ngx.INFO, "cut_name: ", key)
         local data = cache.get_img(key)
         if data then
+            ngx.status = 304
             ngx.header["Content-Type"] = "image/jpeg"
             ngx.print(data)
+            ngx.exit(304)
         else
             response_from_ceph(bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
         end
@@ -198,6 +202,8 @@ function _M.run()
         if data then
             ngx.header["Content-Type"] = "image/jpeg"
             ngx.print(data)
+            -- ngx.status = 304
+            -- ngx.exit(304)
         else
             response_from_file(md5, path_prefix, file_path, cut_name, w, h, g, x, y, r, p, q, f)
         end

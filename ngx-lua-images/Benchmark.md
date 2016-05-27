@@ -1,4 +1,9 @@
 ## Benchmark
+### 配置
+渣配置
+
+- CPU: Intel(R) Celeron(R) CPU G1620 @ 2.70GHz
+- Memery: 2G
 
 ### ngx-lua-images v1.0:
 ```bash
@@ -72,4 +77,46 @@ Running 30s test @ http://127.0.0.1:5000/f78350ae025ae71c3291e8d2d44af8de?w=100&
   Socket errors: connect 0, read 28444, write 0, timeout 0
 Requests/sec:    945.58
 Transfer/sec:     32.84MB
+```
+### 结果
+得益于 openresty 的高效（非阻塞，异步），结果是非常的出色。
+
+ clients/     | ngx-lua-images v1.0 | zimg v3.0.1
+-------|------|-----
+10     | 5182.29 Requests/sec    | 920.90 Requests/sec
+50     | 5077.43 Requests/sec    | 957.33 Requests/sec
+100    | 5080.09 Requests/sec    | 945.58 Requests/sec
+
+------
+# ngx-lua-images with ceph
+
+### 配置
+
+- CPU: Intel(R) Core(TM) i5-4460  CPU @ 3.20GHz
+- Memery: 8 G
+
+###  结果
+```bash
+ wrk -v -c50 -t8 -d30s http://127.0.0.1:8000/abc/a.jpg\?g\=1\&w\=100                                                                                                                        
+wrk 4.0.0 [epoll] Copyright (C) 2012 Will Glozer
+Running 30s test @ http://127.0.0.1:8000/abc/a.jpg?g=1&w=100
+  8 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     7.49ms    3.35ms 138.05ms   94.76%
+    Req/Sec   822.92     85.09     1.44k    83.83%
+  196645 requests in 30.02s, 6.37GB read
+Requests/sec:   6550.74
+Transfer/sec:    217.24MB
+
+wrk -v -c100 -t8 -d30s http://127.0.0.1:8000/abc/a.jpg\?g\=1\&w\=100                                                                                                                       
+wrk 4.0.0 [epoll] Copyright (C) 2012 Will Glozer
+Running 30s test @ http://127.0.0.1:8000/abc/a.jpg?g=1&w=100
+  8 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    16.79ms   21.94ms 672.69ms   98.40%
+    Req/Sec   793.77    117.06     3.16k    90.40%
+  189339 requests in 30.04s, 6.13GB read
+Requests/sec:   6302.25
+Transfer/sec:    209.00MB
+
 ```
