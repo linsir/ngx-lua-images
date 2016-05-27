@@ -175,10 +175,10 @@ function _M.run()
         ngx.log(ngx.INFO, "cut_name: ", key)
         local data = cache.get_img(key)
         if data then
-            ngx.status = 304
+            -- ngx.status = 304
             ngx.header["Content-Type"] = "image/jpeg"
             ngx.print(data)
-            ngx.exit(304)
+            -- ngx.exit(304)
         else
             response_from_ceph(bucket, file, cut_name, w, h, g, x, y, r, p, q, f)
         end
