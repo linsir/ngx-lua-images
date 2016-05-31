@@ -3,8 +3,9 @@
 
 -- local http = require"resty.http"
 local cjson = require "cjson"
-local hmac = require "resty.hmac"
+-- local hmac = require "resty.hmac"
 local os = require "os"
+
 
 config = {
     host = 'http://192.168.2.99',
@@ -60,19 +61,22 @@ function _M.generate_auth_headers(self, method, destination, content_type)
 
     local timestamp = os.date("!%a, %d %b %Y %H:%M:%S +0000")
 
-    local hm, err = hmac:new(self.key)
     local StringToSign = method..string.char(10)..string.char(10)..content_type..string.char(10)..timestamp..string.char(10)..destination
+    local signed = ngx.encode_base64(ngx.hmac_sha1(self.key, StringToSign))
+    signed = 'AWS' .. ' ' .. self.id .. ':' .. signed
 
-    headerstr, err = hm:generate_headers("AWS", self.id, "sha1", StringToSign)
-    signed = headerstr["auth"]
+    -- local hm, err = hmac:new(self.key)
+    -- headerstr, err = hm:generate_headers("AWS", self.id, "sha1", StringToSign)
+    -- signed = headerstr["auth"]
 
-    -- headers = {}
-    -- headers['Authorization'] = signed
-    -- headers['Content-Type'] = content_type
-    -- headers['Date'] = timestamp
+    headers = {}
+    headers['auth'] = signed
+    headers['Content-Type'] = content_type
+    headers['date'] = timestamp
 
-    -- ngx.say(timestamp, cjson.encode(headers))
-    return headerstr
+    -- ngx.say(cjson.encode(headers))
+
+    return headers
 end
 
 function _M.get_all_buckets(self)
